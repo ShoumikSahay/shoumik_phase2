@@ -64,3 +64,22 @@ if ($round === 1) {
 ```
 ## Flag
 picoCTF{y0u_m4d3_1t_79a0ddc6}
+
+
+
+## Challenge 3-Cookies
+## Challenge goal: 
+Find the flag by manipulating cookies sent to the web application.
+## What I found
+
+Visiting the challenge URL showed a small app that changes behavior depending on a cookie named name. The page did not require authentication or any form input — the interesting data was driven by the request cookie. By observing responses while changing the cookie value I discovered that when name=18 the server returns the flag.
+## What I did
+```
+This one-liner requests the /check endpoint while setting the cookie and prints any picoCTF{...} in the response:
+
+curl -s -L http://<challenge-host>:<port>/check -H 'Cookie: name=18' \
+  | grep -oE 'picoCTF\{[^}]+\}'
+```
+## Flag
+picoCTF{3v3ry1_l0v3s_c00k135_bb3b3535}
+
