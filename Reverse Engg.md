@@ -74,3 +74,83 @@ picoCTF{jU5t_a_s1mpl3_an4gr4m_4_u_1fb380}
 
 ## What I learned
 I learned how to carefully read and reverse-engineer Java code by understanding how loops and index manipulation work. I realized that even though the program looked complicated at first, breaking it down into small logical steps made it much easier to follow. I also learned how to invert operations to reconstruct the original input and how to verify my results using a simple Python script.
+
+## Challenge 2-ARM Assembly 1
+## What I did
+```
+The program prints You win! when main receives an integer argument such that func(arg) == 0. Our task is to reverse the assembly in func and compute the input value that makes the function return 0, then format that value as a 32-bit, zero-padded lowercase hex string inside the picoCTF{...} wrapper.
+Inspecting the code
+
+The provided chall_1.S contains two functions: main and func. The relevant portion is func. Here is the assembly excerpt (annotated):
+
+func:
+    sub    sp, sp, #32
+    str    w0, [sp, 12]      // store user input at sp+12
+    mov    w0, 83
+    str    w0, [sp, 16]      // store CONST1 = 83 at sp+16
+    str    wzr, [sp, 20]     // store CONST2 = 0 at sp+20
+    mov    w0, 3
+    str    w0, [sp, 24]      // store CONST3 = 3 at sp+24
+
+    ldr    w0, [sp, 20]      // w0 = CONST2 (0)
+    ldr    w1, [sp, 16]      // w1 = CONST1 (83)
+    lsl    w0, w1, w0        // w0 = CONST1 << CONST2  => 83 << 0 = 83
+    str    w0, [sp, 28]     // store temp = 83
+
+    ldr    w1, [sp, 28]     // w1 = temp (83)
+    ldr    w0, [sp, 24]     // w0 = CONST3 (3)
+    sdiv   w0, w1, w0       // w0 = temp / CONST3 => 83 // 3 = 27
+    str    w0, [sp, 28]     // temp = 27
+
+    ldr    w1, [sp, 28]     // w1 = temp (27)
+    ldr    w0, [sp, 12]     // w0 = user_input
+    sub    w0, w1, w0       // w0 = temp - user_input
+    str    w0, [sp, 28]
+    ldr    w0, [sp, 28]     // return value = temp - user_input
+    add    sp, sp, 32
+    ret
+
+
+main:
+
+reads the command line argument, passes it through atoi → integer arg
+
+calls func(arg)
+
+compares func(arg) to zero (cmp w0, 0)
+
+prints "You win!" if equal (i.e., func(arg) == 0)
+
+So the program prints You win! when func(arg) == 0.
+
+Math & reasoning
+
+From the assembly:
+
+CONST1 = 83
+
+CONST2 = 0
+
+CONST3 = 3
+
+Compute:
+
+temp = CONST1 << CONST2 = 83 << 0 = 83
+
+temp = temp // CONST3 = 83 // 3 = 27 (integer division)
+
+result = temp - input
+
+We need result == 0, so:
+
+temp - input = 0  =>  input = temp = 27
+
+
+Decimal 27 in hexadecimal is 0x1b.
+
+The challenge requires a 32-bit, zero-padded, lowercase hex inside the flag format. Pad 0x1b to 8 hex digits: 0000001b.
+```
+## Flag
+picoCTF{0000001b}
+## What I learned
+By tracing the instructions in func, computing the intermediate values and solving temp - input == 0, we obtain the required input 27, whose 32-bit zero-padded hex representation yields the flag:picoCTF{0000001b}
