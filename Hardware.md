@@ -38,10 +38,9 @@ This challenge involves working with a file that has an unfamiliar extension (.s
 5. I zoomed it tried to play but nothing was working. 
 6. Then I googled some documents like how to extract some hidden texts or values and I found a github repo in which in README section something about - `Analyzers` and `Async Serial` was written to read some data from the file.
 7. I clicked on the Analyzer tab in Logic 2, selected the Async Serial analyzer and it had various settings in it. 
-    <img width="1920" height="983" alt="image (4)" src="https://github.com/user-attachments/assets/a96f458a-1d07-4619-b772-f77b0aa52e66" />
+    
 
 8. I was really confused so I selected the channel0 and default settings but nothing worked. Then I did repeatedly but for 3 channel it worked and some texts were written above the waveform.
-    <img width="1920" height="983" alt="image (5)" src="https://github.com/user-attachments/assets/bdf007d0-338d-49ba-b2bf-0ff8429726c6" />
 
 9. Then I was not able to read the whole text but after some trials I found the button to see whole text I copied in a normal text file.
     ```
