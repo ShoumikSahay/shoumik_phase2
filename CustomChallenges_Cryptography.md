@@ -217,3 +217,139 @@ Mathematical Foundation: Understanding quadratic residues modulo primes ≡ 3 mo
 
 Euler's Criterion: Essential tool for determining quadratic residuosity
 ```
+# Challenge - Quixorte
+## Challenge Description
+```
+A custom encryption algorithm combining bit rotation and XOR operations was used to encrypt a PNG image. The goal is to recover the original image containing the flag.
+```
+## Key Observations
+```
+Two-stage encryption:
+
+Stage 1: Each byte is rotated right by its position index
+
+Stage 2: Sliding XOR with an 8-byte key
+
+Key characteristics: 8 random bytes, reused throughout encryption
+
+Known plaintext: PNG files have fixed header bytes
+
+```
+## Cryptographic Analysis
+```\Encryption Process
+For each byte at position i:
+
+intermediate[i] = rotate(plain[i], i) where rotate performs right rotation
+
+cipher[i] = intermediate[i] ⊕ key[0] ⊕ key[1] ⊕ ... ⊕ key[j] where j = min(i, 7) for first 8 bytes
+
+Mathematical Representation
+Let:
+
+R(i) = rotate(plain[i], i) (right rotation by i bits)
+
+K(j) = ⊕_{k=0}^{j} key[k] (cumulative XOR of key bytes)
+
+For first 8 bytes:
+
+text
+cipher[0] = R(0) ⊕ K(0)
+cipher[1] = R(1) ⊕ K(1)
+cipher[2] = R(2) ⊕ K(2)
+...
+cipher[7] = R(7) ⊕ K(7)
+For bytes ≥ 8:
+
+text
+cipher[i] = R(i) ⊕ key[i%8] ⊕ key[(i+1)%8] ⊕ ... ⊕ key[7]
+```
+## Attack Methodology
+```
+Step 1: Known Plaintext Recovery
+PNG files always begin with: 89 50 4E 47 0D 0A 1A 0A (hex)
+
+Step 2: Key Recovery
+Using the PNG header and the encryption equations:
+
+Compute R(i) = rotate(png_header[i], i) for i = 0..7
+
+Compute cumulative XOR values: K(i) = cipher[i] ⊕ R(i)
+
+Extract individual key bytes:
+
+key[0] = K(0)
+
+key[i] = K(i) ⊕ K(i-1) for i = 1..7
+
+Step 3: Decryption Algorithm
+python
+def decrypt(cipher, key):
+    dec = bytearray(cipher)
+    
+    # Reverse XOR (same as encryption due to XOR properties)
+    for i in range(len(dec) - len(key) + 1):
+        for j in range(len(key)):
+            dec[i+j] ^= key[j]
+    
+    # Reverse rotation (left rotate to undo right rotate)
+    for i in range(len(dec)):
+        dec[i] = ((dec[i] << (i % 8)) | (dec[i] >> (8 - (i % 8)))) & 0xFF
+    
+    return bytes(dec)
+Solution Script
+python
+def rotate(b, i):
+    return ((b >> (i % 8)) | (b << (8 - (i % 8)))) & 0xFF
+
+def decrypt(enc, key):
+    dec = bytearray(enc)
+    
+    # Reverse sliding XOR
+    for i in range(len(dec) - len(key) + 1):
+        for j in range(len(key)):
+            dec[i+j] ^= key[j]
+    
+    # Reverse rotation (left rotate)
+    for i in range(len(dec)):
+        dec[i] = ((dec[i] << (i % 8)) | (dec[i] >> (8 - (i % 8)))) & 0xFF
+    
+    return bytes(dec)
+
+# Known PNG header
+png_magic = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+
+# Read encrypted file
+with open('quote.png.enc', 'rb') as f:
+    enc = f.read()
+
+# Recover key using known plaintext
+R = [rotate(png_magic[i], i) for i in range(8)]
+K = [enc[i] ^ R[i] for i in range(8)]
+
+key = bytearray(8)
+key[0] = K[0]
+for i in range(1, 8):
+    key[i] = K[i] ^ K[i-1]
+
+print(f"Recovered key: {key.hex()}")
+
+# Decrypt entire file
+decrypted = decrypt(enc, key)
+
+# Save and verify
+with open('quote.png', 'wb') as f:
+    f.write(decrypted)
+
+print("Decryption successful. Image saved as quote.png")
+```
+## Execution Results
+```
+File size: 153026 bytes
+Recovered key: ec95e0220a3d5ab7
+✓ PNG header verified!
+Saved as quote.png
+```
+## FLAG
+```
+nite{t0_b3_X0R_n0t_t0_b3333}
+```
