@@ -106,3 +106,114 @@ print(f"[*] Full Flag: nite{{{flag_content.decode()}}}")
 ```
 nite{1mp0r7_m0dul3?_1_4M_7h3_m0dul3}
 ```
+# Challenge - All Signs Align
+## Challenge Description
+```
+A custom encryption scheme based on quadratic residues modulo a large prime. The flag is encoded bit-by-bit using the quadratic residuosity of numbers.
+```
+## Key Observations:
+```
+p is a large prime (likely ≡ 3 mod 4)
+
+get_x() returns a quadratic residue (QR) modulo p
+
+get_y() returns -x mod p, which is a quadratic non-residue (QNR) when p ≡ 3 mod 4
+
+A fixed random QR a multiplies each output
+
+Each bit of the flag determines whether to use x (QR) or y (QNR)
+
+```
+## Cryptographic Analysis
+```
+Mathematical Properties
+For prime p ≡ 3 mod 4:
+
+Euler's criterion: x is QR if x^((p-1)/2) ≡ 1 mod p
+
+-1 is a QNR when p ≡ 3 mod 4
+
+Multiplication rules:
+
+QR × QR = QR
+
+QR × QNR = QNR
+
+Encoding Scheme
+Given a fixed QR a:
+
+If flag bit = 0: output = a × x (QR × QR = QR)
+
+If flag bit = 1: output = a × y (QR × QNR = QNR)
+
+Thus, each number in out.txt reveals one bit of the flag through its quadratic residuosity.
+```
+## Attack Methodology
+```
+Step 1: Verify Prime Properties
+python
+p = 9129026491768303016811207218323770273047638648509577266210613478726929333106121387323539916009107476349319902011390210650434835260358014251332047605739279
+print(f"p mod 4 = {p % 4}")  # Output: 3
+print(f"p is prime: {isPrime(p)}")  # Output: True
+Step 2: Determine Quadratic Residuosity
+Using Euler's criterion for each number n in out.txt:
+
+Compute r = pow(n, (p-1)//2, p)
+
+If r == 1: n is QR → flag bit = ?
+
+If r == p-1: n is QNR → flag bit = ?
+
+Step 3: Bit Mapping Discovery
+Initial assumption (from code reading): QR → '0', QNR → '1'
+However, this produced garbled output.
+
+After testing both mappings:
+
+QR → '0', QNR → '1': Garbage
+
+QR → '1', QNR → '0': Meaningful text
+
+Step 4: Bit Alignment
+The binary string had 263 bits (263 % 8 = 7), requiring bit offset correction:
+
+Offset 0-6: Garbage
+
+Offset 7: Readable flag text
+
+Solution Script
+python
+import ast
+
+p = 9129026491768303016811207218323770273047638648509577266210613478726929333106121387323539916009107476349319902011390210650434835260358014251332047605739279
+
+with open('out.txt', 'r') as f:
+    numbers = ast.literal_eval(f.read())
+
+exponent = (p - 1) // 2
+
+# Correct mapping: QR → '1', QNR → '0'
+bits = ''.join('1' if pow(n, exponent, p) == 1 else '0' for n in numbers)
+
+# Apply offset 7 for proper byte alignment
+bits = bits[7:]
+bits = bits[:-(len(bits) % 8)]  # Trim to multiple of 8
+
+# Convert to ASCII
+flag = ''.join(chr(int(bits[i:i+8], 2)) for i in range(0, len(bits), 8))
+print(f"Flag: {flag}")
+```
+## FLAG
+```
+ite{r3s1du35_f4ll1ng_1nt0_pl4c3}
+```
+## Key Insights
+```
+Bit Mapping Reversal: The intuitive mapping from the source code was reversed in practice
+
+Bit Alignment: 263 bits required a 7-bit offset for proper ASCII decoding
+
+Mathematical Foundation: Understanding quadratic residues modulo primes ≡ 3 mod 4 was crucial
+
+Euler's Criterion: Essential tool for determining quadratic residuosity
+```
