@@ -353,3 +353,101 @@ Saved as quote.png
 ```
 nite{t0_b3_X0R_n0t_t0_b3333}
 ```
+# Challenge - Willy's Chocolate Experience
+## Challenge Description
+```
+A custom mathematical function based on Willy Wonka's "imagination lab" encodes a golden ticket (the flag). The challenge requires recovering the ticket from two output values.
+```
+## Key Observations
+```
+Custom function: imagination_lab(m) = 13^m + 37^m mod p
+
+Large prime modulus: p (1024-bit prime)
+
+Output: Last two elements of sequence: [imagination_lab(ticket-1), imagination_lab(ticket)]
+
+Goal: Recover ticket = bytes_to_long(b"nite{...}")
+```
+## Mathematical Analysis
+```
+Sequence Properties
+Let s(m) = 13^m + 37^m mod p. This sequence satisfies a linear recurrence:
+
+
+s(m+2) = (13+37) * s(m+1) - 13*37 * s(m) mod p
+       = 50 * s(m+1) - 481 * s(m) mod p
+Given Values
+We have:
+
+
+a = s(t-1) = 13^(t-1) + 37^(t-1) mod p
+b = s(t)   = 13^t + 37^t mod p
+Solving for Individual Terms
+Let:
+
+X = 13^(t-1) mod p
+
+Y = 37^(t-1) mod p
+
+Then:
+
+
+a = X + Y mod p
+b = 13X + 37Y mod p
+This is a system of linear equations. Solving:
+
+
+Y = a - X mod p
+b = 13X + 37(a - X) = 37a - 24X mod p
+24X = 37a - b mod p
+X = (37a - b) * 24^(-1) mod p
+Y = a - X mod p
+```
+## Solution Implementation
+```
+Step 1: Compute X and Y
+python
+p = 396430433566694153228963024068183195900644000015629930982017434859080008533624204265038366113052353086248115602503012179807206251960510130759852727353283868788493357310003786807
+
+a = 124499652441066069321544812234595327614165778598236394255418354986873240978090206863399216810942232360879573073405796848165530765886142184827326462551698684564407582751560255175
+b = 208271276785711416565270003674719254652567820785459096303084135643866107254120926647956533028404502637100461134874329585833364948354858925270600245218260166855547105655294503224
+
+inv24 = inverse_mod(24, p)
+X = ((37 * a - b) * inv24) % p  # = 13^(t-1) mod p
+Y = (a - X) % p                 # = 37^(t-1) mod p
+Step 2: Solve Discrete Logarithm
+We need to solve:
+
+text
+13^(t-1) ≡ X mod p
+This is a discrete logarithm problem. The modulus p is specially chosen such that p-1 has small prime factors (smooth), making the Pohlig-Hellman algorithm efficient.
+
+Step 3: SageMath Solution
+sage
+# Define finite field
+F = GF(p)
+g = F(13)  # Base
+h = F(X)   # Target
+
+# SageMath solves discrete log efficiently using Pohlig-Hellman
+t_minus_1 = discrete_log(h, g)
+t = t_minus_1 + 1
+
+# Convert to flag
+flag = int(t).to_bytes((t.bit_length() + 7) // 8, 'big')
+print(f"Flag: {flag}")
+```
+## Execution results
+```
+Solving discrete log...
+t-1 = 762035150520137567051383230813374869523369672000904743873872089989543804
+t = 762035150520137567051383230813374869523369672000904743875
+Flag: b'nite{g0ld3n_t1ck3t_t0_gl4sg0w}'
+Flag as string: nite{g0ld3n_t1ck3t_t0_gl4sg0w}
+```
+## Flag
+```
+nite{g0ld3n_t1ck3t_t0_gl4sg0w}
+```
+
+
